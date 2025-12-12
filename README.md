@@ -69,23 +69,24 @@ MichaelMusic là ứng dụng nghe nhạc được xây dựng bằng Flutter, t
 ```text
 lib/
 ├── data/
-│   ├── model/             # Song model
-│   ├── repository/        # Repository pattern
-│   └── service/           # FileManager: download, cache
+│   ├── model/          # Song model (song.dart) - Định nghĩa dữ liệu bài hát
+│   ├── repository/     # Repository pattern - Xử lý nguồn dữ liệu
+│   └── service/        # Các dịch vụ nền:
+│       └── file_manager.dart  # Quản lý tải file, đọc/ghi JSON local
 ├── ui/
-│   ├── home/
-│   │   ├── home.dart
-│   │   ├── tab_download.dart
-│   │   ├── song_list_view.dart
-│   │   └── mini_player.dart
-│   ├── now_playing/
-│   │   ├── audio_player_manager.dart    # Singleton player logic
-│   │   ├── audio_handler.dart           # AudioService config
-│   │   └── widgets/
-│   └── settings/
-│       ├── settings.dart
-│       └── theme_manager.dart
-└── main.dart
+│   ├── home/           # Màn hình chính
+│   │   ├── home.dart          # Tab Home
+│   │   ├── tab_download.dart  # Tab bài hát đã tải
+│   │   ├── song_list_view.dart # Widget hiển thị danh sách bài hát
+│   │   └── mini_player.dart   # Widget trình phát nhạc thu nhỏ
+│   ├── now_playing/    # Màn hình phát nhạc chi tiết
+│   │   ├── audio_player_manager.dart # Logic xử lý Audio Player (Singleton)
+│   │   ├── audio_handler.dart        # Cấu hình AudioService
+│   │   └── widgets/                  # Các widget con (Artwork, Controls, ProgressBar...)
+│   └── settings/       # Màn hình cài đặt
+│       ├── settings.dart      # UI Cài đặt & Hẹn giờ
+│       └── theme_manager.dart # Quản lý Dark/Light mode
+└── main.dart           # Điểm khởi chạy ứng dụng
 ```
 
 ---
