@@ -2,6 +2,7 @@ Folder PATH listing for volume ghosty
 Volume serial number is FB53-D560
 C:.
 |   .flutter-plugins-dependencies
+|   .gitattributes
 |   .gitignore
 |   .metadata
 |   analysis_options.yaml
@@ -58,6 +59,7 @@ C:.
 |   |   deviceManager.xml
 |   |   misc.xml
 |   |   modules.xml
+|   |   vcs.xml
 |   |   workspace.xml
 |   |   
 |   +---caches
@@ -3206,36 +3208,30 @@ C:.
 |           \---compileDebugJavaWithJavac
 |                   previous-compilation-data.bin
 |                   
-+---lib
-|   |   main.dart
-|   |   
-|   +---data
-|   |   +---model
-|   |   |       song.dart
-|   |   |       
-|   |   +---repository
-|   |   |       repository.dart
-|   |   |       
-|   |   +---service
-|   |   |       file_manager.dart
-|   |   |       
-|   |   \---source
-|   |           source.dart
-|   |           
-|   \---ui
-|       +---home
-|       |       home.dart
-|       |       mini_player.dart
-|       |       
-|       +---now_playing
-|       |       audio_handler.dart
-|       |       audio_player_manager.dart
-|       |       now_playing_page.dart
-|       |       
-|       \---settings
-|               settings.dart
-|               theme_manager.dart
-|               
-\---test
-        widget_test.dart
-        
+\---lib
+    |   main.dart
+    |   
+    +---data
+    |   +---model
+    |   |       song.dart
+    |   |       
+    |   +---repository
+    |   |       repository.dart
+    |   |       
+    |   \---service
+    |           file_manager.dart
+    |           
+    \---ui
+        +---home
+        |       home.dart
+        |       mini_player.dart
+        |       
+        +---now_playing
+        |       audio_handler.dart
+        |       audio_player_manager.dart
+        |       now_playing_page.dart
+        |       
+        \---settings
+                settings.dart
+                theme_manager.dart
+                

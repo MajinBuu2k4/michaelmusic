@@ -57,13 +57,16 @@ class _MiniPlayerState extends State<MiniPlayer> with SingleTickerProviderStateM
         // Nếu có bài thì hiện lên
         return Dismissible(
           key: const Key('mini_player'),
-          direction: DismissDirection.down, // Vuốt xuống để ẩn (nếu thích)
+          direction: DismissDirection.down, // Vuốt xuống để ẩn
           onDismissed: (_) {
-            _audioPlayerManager.pause(); // Ẩn thì dừng nhạc
+            // 🔥 SỬA LỖI Ở ĐÂY:
+            // 1. Dừng nhạc
+            _audioPlayerManager.stop();
+            // 2. Xóa bài hát khỏi bộ nhớ đệm để Widget biến mất hoàn toàn -> Hết lỗi
+            _audioPlayerManager.songNotifier.add(null);
           },
           child: Container(
             height: 60, // Chiều cao Mini Player
-            margin: const EdgeInsets.only(bottom: 50), // 🔥 Căn lề dưới để nằm trên TabBar
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor, // Màu nền theo giao diện
               border: Border(top: BorderSide(color: Colors.grey.shade300, width: 0.5)),
