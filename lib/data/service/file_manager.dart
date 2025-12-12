@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:rxdart/rxdart.dart'; // 🔥 Thêm thư viện này để dùng PublishSubject
+import 'package:rxdart/rxdart.dart';
 import '../model/song.dart';
 
 class FileManager {
@@ -16,7 +16,6 @@ class FileManager {
   final Dio _dio = Dio();
   final String _fileName = "local_songs.json";
 
-  // 🔥 Tín hiệu thông báo download xong (Stream)
   final downloadCompleteNotifier = PublishSubject<String>();
 
   Future<String> get _localPath async {
@@ -41,6 +40,7 @@ class FileManager {
     }
   }
 
+  // 🔥 CẬP NHẬT HÀM NÀY
   Future<List<Song>> getSongs() async {
     try {
       final file = await _localFile;
@@ -50,7 +50,30 @@ class FileManager {
       final data = jsonDecode(contents);
       final List<dynamic> songList = data['songs'];
 
-      return songList.map((json) => Song.fromJson(json)).toList();
+      // Parse JSON sang List<Song>
+      List<Song> songs = songList.map((json) => Song.fromJson(json)).toList();
+
+      // 🔥 LOGIC BỔ SUNG: Quét thư mục 'source' để kiểm tra file tồn tại
+      final dir = await _localPath;
+      final sourceDir = Directory('$dir/source');
+
+      if (await sourceDir.exists()) {
+        for (var song in songs) {
+          // Kiểm tra file mp3
+          final fileMp3 = File('${sourceDir.path}/${song.id}.mp3');
+          if (fileMp3.existsSync()) {
+            song.localAudioPath = fileMp3.path;
+            continue; // Tìm thấy mp3 rồi thì bỏ qua check wav
+          }
+          // Kiểm tra file wav
+          final fileWav = File('${sourceDir.path}/${song.id}.wav');
+          if (fileWav.existsSync()) {
+            song.localAudioPath = fileWav.path;
+          }
+        }
+      }
+
+      return songs;
     } catch (e) {
       print("❌ Lỗi đọc file local: $e");
       return [];
@@ -92,7 +115,6 @@ class FileManager {
 
       print("✅ Tải xong: $savePath");
 
-      // 🔥 BẮN TÍN HIỆU: Báo cho cả App biết là tải xong rồi nhé!
       if (type == 'source') {
         downloadCompleteNotifier.add(songId);
       }

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Để dùng TextInputFormatter
 import '../now_playing/audio_player_manager.dart';
+import 'theme_manager.dart'; // 🔥 Import ThemeManager
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -12,8 +13,7 @@ class SettingsTab extends StatefulWidget {
 }
 
 class _SettingsTabState extends State<SettingsTab> {
-  // Giả lập trạng thái Dark Mode
-  bool _isDarkMode = true;
+  // ❌ XÓA BIẾN NÀY ĐI: bool _isDarkMode = true;
 
   @override
   Widget build(BuildContext context) {
@@ -27,23 +27,33 @@ class _SettingsTabState extends State<SettingsTab> {
         child: Column(
           children: [
             // --- MỤC GIAO DIỆN ---
-            ListTile(
-              leading: const Icon(Icons.dark_mode, color: Colors.amber),
-              title: const Text("Giao diện Tối (Dark Mode)"),
-              trailing: Switch(
-                value: _isDarkMode,
-                activeColor: Colors.deepPurpleAccent,
-                onChanged: (value) {
-                  setState(() {
-                    _isDarkMode = value;
-                  });
-                },
-              ),
+            // 🔥 BỌC VÀO ValueListenableBuilder ĐỂ LẮNG NGHE THEME THẬT
+            ValueListenableBuilder<ThemeMode>(
+              valueListenable: ThemeManager().themeMode,
+              builder: (context, mode, child) {
+                // Kiểm tra xem chế độ hiện tại có phải Dark không
+                // (Nếu là system thì tùy máy, ở đây ta check đơn giản là == dark)
+                // Hoặc bạn có thể check: mode == ThemeMode.dark
+                bool isSwitchedOn = mode == ThemeMode.dark;
+
+                return ListTile(
+                  leading: const Icon(Icons.dark_mode, color: Colors.amber),
+                  title: const Text("Giao diện Tối (Dark Mode)"),
+                  trailing: Switch(
+                    value: isSwitchedOn,
+                    activeColor: Colors.deepPurpleAccent,
+                    onChanged: (value) {
+                      // 🔥 GỌI MANAGER ĐỂ ĐỔI THEME TOÀN APP
+                      ThemeManager().toggleTheme(value);
+                    },
+                  ),
+                );
+              },
             ),
 
             const Divider(),
 
-            // --- 🔥 MỤC HẸN GIỜ ---
+            // --- MỤC HẸN GIỜ ---
             ValueListenableBuilder<bool>(
               valueListenable: AudioPlayerManager().isSleepTimerActive,
               builder: (context, isActive, child) {
@@ -87,6 +97,7 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
+  // ... (Các hàm _showSleepTimerModal, _showCustomTimerDialog, _buildTimerOption giữ nguyên)
   // Hàm hiện menu chọn giờ
   void _showSleepTimerModal(BuildContext context) {
     showModalBottomSheet(
@@ -111,7 +122,7 @@ class _SettingsTabState extends State<SettingsTab> {
               _buildTimerOption(context, 60, "60 phút (1 tiếng)"),
               _buildTimerOption(context, 120, "120 phút (2 tiếng)"),
 
-              // --- 🔥 TÙY CHỌN TÙY CHỈNH ---
+              // --- TÙY CHỌN TÙY CHỈNH ---
               ListTile(
                 leading: const Icon(Icons.edit_calendar),
                 title: const Text("Tùy chỉnh thời gian..."),

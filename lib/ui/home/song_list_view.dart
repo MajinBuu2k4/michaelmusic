@@ -25,18 +25,25 @@ class SongListView extends StatelessWidget {
     }
 
     return ListView.separated(
-      // 🔥 Tăng padding bottom lên một chút để chắc chắn item cuối không bị MiniPlayer che
+      // Tăng padding bottom để item cuối không bị MiniPlayer che
       padding: const EdgeInsets.only(bottom: 160),
       itemCount: songs.length,
       separatorBuilder: (_, __) => const Divider(indent: 64, height: 1),
       itemBuilder: (context, index) {
         final song = songs[index];
+
+        // 🔥 LOGIC MỚI: Xác định bài hát đã tải
+        // Kiểm tra xem biến localAudioPath có dữ liệu không
+        bool isDownloaded = song.localAudioPath != null && song.localAudioPath!.isNotEmpty;
+
         return ListTile(
+          // 1. ĐỔI MÀU NỀN: Nếu đã tải thì hiện màu tím nhạt, chưa tải thì để trống
+          tileColor: isDownloaded ? Colors.deepPurple.withOpacity(0.08) : null,
+
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 
           // Ảnh bìa
           leading: Hero(
-            // 🔥 SỬA LỖI Ở ĐÂY: Dùng chính xác song.id làm tag để khớp với trang NowPlaying
             tag: song.id,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
@@ -53,7 +60,11 @@ class SongListView extends StatelessWidget {
             song.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              // (Tùy chọn) Đổi màu chữ thành tím nếu đã tải
+              color: isDownloaded ? Colors.deepPurple : null,
+            ),
           ),
 
           // Tên ca sĩ + Lượt nghe
@@ -72,6 +83,11 @@ class SongListView extends StatelessWidget {
               Text(" ${song.counter}", style: const TextStyle(fontSize: 12)),
             ],
           ),
+
+          // 2. THÊM DẤU CHECK ✔️ Ở CUỐI (Trailing)
+          trailing: isDownloaded
+              ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+              : null,
 
           // Sự kiện bấm vào bài hát
           onTap: () => _playSong(context, song),
@@ -106,13 +122,11 @@ class SongListView extends StatelessWidget {
     Navigator.push(
       context,
       PageRouteBuilder(
-        // Tăng thời gian transition lên một chút để nhìn rõ hiệu ứng Hero
         transitionDuration: const Duration(milliseconds: 500),
         pageBuilder: (_, __, ___) => NowPlayingPage(songs: songs, playingSong: song),
         transitionsBuilder: (_, animation, __, child) {
           const begin = Offset(0.0, 1.0);
           const end = Offset.zero;
-          // Sử dụng curve chuẩn của iOS/Material cho mượt
           const curve = Curves.fastOutSlowIn;
           var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
           return SlideTransition(position: animation.drive(tween), child: child);
