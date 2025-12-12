@@ -150,8 +150,3 @@ Phiên bản: **1.0.0 – Michael Music Edition**
 
 ---
 
-### 🔧 Gợi ý để README đẹp hơn
-
-1. Chụp ảnh Home – Player – Settings
-2. Lưu tại: `assets/screenshots/`
-3. Đặt tên: `home.png`, `player.png`, `settings.png`
