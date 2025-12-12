@@ -59,10 +59,7 @@ class _MiniPlayerState extends State<MiniPlayer> with SingleTickerProviderStateM
           key: const Key('mini_player'),
           direction: DismissDirection.down, // Vuốt xuống để ẩn
           onDismissed: (_) {
-            // 🔥 SỬA LỖI Ở ĐÂY:
-            // 1. Dừng nhạc
             _audioPlayerManager.stop();
-            // 2. Xóa bài hát khỏi bộ nhớ đệm để Widget biến mất hoàn toàn -> Hết lỗi
             _audioPlayerManager.songNotifier.add(null);
           },
           child: Container(
@@ -81,7 +78,8 @@ class _MiniPlayerState extends State<MiniPlayer> with SingleTickerProviderStateM
                   context,
                   MaterialPageRoute(
                     builder: (context) => NowPlayingPage(
-                      songs: const [], // Lưu ý: Ở đây ta không cần list songs nữa vì Manager đã nắm giữ rồi
+                      // 🔥 SỬA LỖI Ở ĐÂY: Truyền playlist thực tế thay vì list rỗng
+                      songs: _audioPlayerManager.playlist,
                       playingSong: song,
                     ),
                   ),
@@ -157,7 +155,7 @@ class _MiniPlayerState extends State<MiniPlayer> with SingleTickerProviderStateM
     );
   }
 
-  // Hàm lấy ảnh (y hệt logic cũ)
+  // Hàm lấy ảnh
   ImageProvider _getArtwork(Song song) {
     if (song.localImagePath != null && File(song.localImagePath!).existsSync()) {
       return FileImage(File(song.localImagePath!));

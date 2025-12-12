@@ -9,6 +9,9 @@ import '../../data/model/song.dart';
 import 'audio_handler.dart';
 import '../../data/service/file_manager.dart';
 
+// 🔥 1. CHUYỂN ENUM SANG ĐÂY ĐỂ DÙNG CHUNG (Cắt từ now_playing_page qua)
+enum RepeatMode { off, all, one }
+
 class AudioPlayerManager {
   static final AudioPlayerManager _instance = AudioPlayerManager._internal();
   factory AudioPlayerManager() => _instance;
@@ -21,6 +24,11 @@ class AudioPlayerManager {
   String? currentSongId;
   Timer? _sleepTimer;
   final isSleepTimerActive = ValueNotifier<bool>(false);
+  List<Song> playlist = [];
+
+  // 🔥 2. THÊM 2 BIẾN LƯU TRẠNG THÁI (Mặc định: Tắt)
+  bool isShuffle = false;
+  RepeatMode loopMode = RepeatMode.off;
 
   Future<void> init() async {
     _audioHandler = await AudioService.init(
@@ -42,43 +50,30 @@ class AudioPlayerManager {
         )).asBroadcastStream();
   }
 
-  // --- 🔥 LOGIC ĐÃ SỬA: CHECK TRÙNG BÀI ---
   void setPlaylist(List<Song> songs, int index) {
+    playlist = songs;
     final selectedSong = songs[index];
-
-    // Kiểm tra: Nếu bài được chọn (selectedSong) khác với bài đang phát (currentSongId)
-    // thì mới đánh dấu là bài mới (isNew = true) để load lại từ đầu.
-    // Ngược lại, nếu trùng ID, isNew = false -> giữ nguyên tiến độ đang phát.
     final bool isNew = selectedSong.id != currentSongId;
-
     prepare(song: selectedSong, isNewSong: isNew);
     play();
   }
-  // ----------------------------------------
 
   Future<void> prepare({required Song song, bool isNewSong = false}) async {
     songNotifier.add(song);
-
-    // Nếu bài này đang load rồi thì thôi (Giữ nguyên trạng thái đang phát)
     if (song.id == currentSongId && !isNewSong) return;
-
     currentSongId = song.id;
 
     final fileManager = FileManager();
     String sourceToPlay = song.source;
     Uri artUri = Uri.parse(song.image);
 
-    // Check Nhạc
     try {
       final localMusicPath = await fileManager.downloadMedia(song.source, song.id, 'source');
-      if (localMusicPath != null) {
-        sourceToPlay = localMusicPath;
-      }
+      if (localMusicPath != null) sourceToPlay = localMusicPath;
     } catch (e) {
       print("⚠️ Lỗi tải nhạc: $e");
     }
 
-    // Check Ảnh
     try {
       final localImagePath = await fileManager.downloadMedia(song.image, song.id, 'image');
       if (localImagePath != null) {
@@ -110,10 +105,7 @@ class AudioPlayerManager {
           tag: mediaItem,
         ));
       } else {
-        await player.setAudioSource(AudioSource.file(
-          sourceToPlay,
-          tag: mediaItem,
-        ));
+        await player.setAudioSource(AudioSource.file(sourceToPlay, tag: mediaItem));
       }
     } catch (e) {
       print("❌ Lỗi player: $e");
