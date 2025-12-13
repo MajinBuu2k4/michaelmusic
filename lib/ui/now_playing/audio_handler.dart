@@ -10,12 +10,13 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
   Function()? onSkipNext;
   Function()? onSkipPrevious;
 
-  MyAudioHandler(this._player);
-
-  Future<void> init() async {
-    // Lắng nghe sự kiện từ Player và chuyển đổi sang trạng thái AudioService
+  // 🔥 [SỬA Ở ĐÂY] Đưa logic lắng nghe vào thẳng Constructor (Hàm khởi tạo)
+  MyAudioHandler(this._player) {
+    // Lắng nghe sự kiện từ Player và chuyển đổi sang trạng thái AudioService NGAY LẬP TỨC
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
   }
+
+  // ❌ ĐÃ XÓA HÀM init() VÌ KHÔNG CẦN THIẾT NỮA
 
   // --- HÀM BIẾN ĐỔI TRẠNG THÁI (QUAN TRỌNG) ---
   PlaybackState _transformEvent(PlaybackEvent event) {
@@ -28,7 +29,8 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
       systemActions: const {
         MediaAction.seek,
       },
-      androidCompactActionIndices: const [0, 1, 2], // Thứ tự nút trên thông báo nhỏ (Prev, Play/Pause, Next)
+      // Thứ tự nút trên thông báo nhỏ (Android 13+ rất quan trọng cái này)
+      androidCompactActionIndices: const [0, 1, 2],
       processingState: const {
         ProcessingState.idle: AudioProcessingState.idle,
         ProcessingState.loading: AudioProcessingState.loading,

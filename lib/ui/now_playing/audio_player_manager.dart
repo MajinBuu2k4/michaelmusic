@@ -59,11 +59,24 @@ class AudioPlayerManager {
   }
 
   Future<void> prepare({required Song song, bool isNewSong = false}) async {
+    // Cập nhật UI lần 1 để hiện bài hát ngay
     songNotifier.add(song);
+
     if (song.id == currentSongId && !isNewSong) return;
     currentSongId = song.id;
 
     final fileManager = FileManager();
+
+    // 🔥🔥🔥 [SỬA LỖI] TĂNG SỐ LƯỢT NGHE & LƯU VÀO MÁY
+    try {
+      song.counter = song.counter + 1; // Tăng số đếm
+      await fileManager.updateSongInLocal(song); // Lưu vào json
+      songNotifier.add(song); // Cập nhật lại UI để hiện số lượt nghe mới ngay lập tức
+    } catch (e) {
+      print("⚠️ Lỗi cập nhật lượt nghe: $e");
+    }
+    // 🔥🔥🔥 [HẾT PHẦN SỬA LỖI]
+
     String sourceToPlay = song.source;
     Uri artUri = Uri.parse(song.image);
 

@@ -15,6 +15,7 @@ import 'widgets/media_info.dart';
 import 'widgets/media_progress_bar.dart';
 import 'widgets/media_controls.dart';
 import 'widgets/player_options.dart'; // 🔥 Import widget mới
+import 'widgets/circular_particle_visualizer.dart';
 
 class NowPlayingPage extends StatefulWidget {
   const NowPlayingPage({
@@ -185,10 +186,16 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
             Text(_song.album,
                 style: const TextStyle(fontSize: 16, color: Colors.grey)),
             const SizedBox(height: 24),
-            MediaArtwork(
+            // Code cũ:
+            //MediaArtwork(
+              //song: _song,
+              //animationController: _imageAnimController,
+              //radius: radius,
+            //),
+            // Code MỚI (Thay thế đoạn trên bằng đoạn này):
+            CircularParticleVisualizer(
               song: _song,
-              animationController: _imageAnimController,
-              radius: radius,
+              radius: radius, // Giữ nguyên bán kính cũ
             ),
             const SizedBox(height: 24),
             MediaInfo(
