@@ -1,11 +1,14 @@
+import 'dart:async'; // Để dùng StreamSubscription
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart'; // Import để bắt trạng thái Playing/Paused
 import '../../../data/model/song.dart';
+import '../audio_player_manager.dart'; // Gọi ông quản lý nhạc
 
 class CircularParticleVisualizer extends StatefulWidget {
   final Song song;
-  final double radius; // Bán kính tổng thể
+  final double radius;
 
   const CircularParticleVisualizer({
     super.key,
@@ -20,66 +23,89 @@ class CircularParticleVisualizer extends StatefulWidget {
 class _CircularParticleVisualizerState extends State<CircularParticleVisualizer>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  final List<Particle> _particles = [];
-  final Random _random = Random();
+
+  // Biến để quản lý lắng nghe nhạc
+  StreamSubscription<PlayerState>? _playerStateSubscription;
 
   @override
   void initState() {
     super.initState();
-    // Tạo hiệu ứng chuyển động liên tục
+
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2), // Tốc độ nhịp
-    )..repeat();
+      duration: const Duration(seconds: 4),
+    );
 
-    // Khởi tạo 100 hạt ngẫu nhiên
-    for (int i = 0; i < 60; i++) {
-      _particles.add(Particle(
-        angle: _random.nextDouble() * 2 * pi,
-        distance: _random.nextDouble(),
-        speed: 0.5 + _random.nextDouble() * 0.5,
-        size: 2 + _random.nextDouble() * 4,
-        color: Colors.primaries[_random.nextInt(Colors.primaries.length)].withOpacity(0.6),
-      ));
-    }
+    // 🔥 LOGIC MỚI: Tự động Bật/Tắt theo trạng thái nhạc
+    final player = AudioPlayerManager().player;
+
+    _playerStateSubscription = player.playerStateStream.listen((state) {
+      // Nếu nhạc đang chạy (playing) và chưa kết thúc (completed)
+      if (state.playing && state.processingState != ProcessingState.completed) {
+        if (!_controller.isAnimating) {
+          _controller.repeat(); // Cho quẩy
+        }
+      } else {
+        // Nhạc tắt hoặc đang buffer -> Dừng hình ngay
+        if (_controller.isAnimating) {
+          _controller.stop(); // Stop ngay tại chỗ
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
+    // Nhớ hủy lắng nghe để tránh lỗi
+    _playerStateSubscription?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final double artSize = (widget.radius - 20) * 2;
+
     return SizedBox(
       width: widget.radius * 2,
       height: widget.radius * 2,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // 1. Lớp vẽ các hạt (Particle Visualizer)
+          // 1. Sóng nhạc Neon
           AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
               return CustomPaint(
                 size: Size(widget.radius * 2, widget.radius * 2),
-                painter: ParticlePainter(
-                  particles: _particles,
-                  progress: _controller.value,
-                  baseRadius: widget.radius - 20, // Bán kính vùng hạt bay
+                painter: NeonSpectrumPainter(
+                  animationValue: _controller.value, // Giá trị dừng thì sóng cũng dừng
+                  radius: widget.radius - 10,
                 ),
               );
             },
           ),
 
-          // 2. Ảnh bìa Album (Nằm đè lên trên ở giữa)
-          // Có thể thêm hiệu ứng xoay nhẹ hoặc Scale theo nhịp ở đây nếu thích
-          ClipOval(
-            child: SizedBox(
-              width: (widget.radius - 30) * 2, // Nhỏ hơn visualizer một chút
-              height: (widget.radius - 30) * 2,
-              child: _buildArtwork(widget.song),
+          // 2. Ảnh bìa Album (Xoay theo nhạc)
+          RotationTransition(
+            turns: _controller, // Controller dừng thì ảnh cũng ngừng xoay
+            child: Container(
+              width: artSize,
+              height: artSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.black, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  )
+                ],
+              ),
+              child: ClipOval(
+                child: _buildArtwork(widget.song),
+              ),
             ),
           ),
         ],
@@ -109,64 +135,80 @@ class _CircularParticleVisualizerState extends State<CircularParticleVisualizer>
   }
 }
 
-// Class mô tả một hạt
-class Particle {
-  double angle; // Góc (vị trí trên vòng tròn)
-  double distance; // Khoảng cách từ tâm (0.0 - 1.0)
-  double speed;    // Tốc độ di chuyển
-  double size;     // Kích thước hạt
-  Color color;     // Màu sắc
+// 🔥 HỌA SĨ VẼ SÓNG NEON (Giữ nguyên độ chất chơi)
+class NeonSpectrumPainter extends CustomPainter {
+  final double animationValue;
+  final double radius;
 
-  Particle({
-    required this.angle,
-    required this.distance,
-    required this.speed,
-    required this.size,
-    required this.color,
-  });
-}
-
-// Họa sĩ vẽ hạt
-class ParticlePainter extends CustomPainter {
-  final List<Particle> particles;
-  final double progress; // Giá trị từ 0.0 -> 1.0 (do AnimationController cấp)
-  final double baseRadius;
-
-  ParticlePainter({
-    required this.particles,
-    required this.progress,
-    required this.baseRadius,
+  NeonSpectrumPainter({
+    required this.animationValue,
+    required this.radius,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
+    final double barCount = 100;
+    final double angleStep = (2 * pi) / barCount;
 
-    for (var p in particles) {
-      // Tính toán chuyển động giả lập
-      // Hạt sẽ di chuyển ra/vào theo hàm sin/cos để tạo cảm giác "thở"
-      final moveFactor = sin(progress * 2 * pi * p.speed + p.distance * 10);
+    // Gradient xoay theo animationValue
+    final Gradient gradient = SweepGradient(
+      startAngle: 0.0,
+      endAngle: 2 * pi,
+      colors: const [
+        Colors.cyanAccent,
+        Colors.purpleAccent,
+        Colors.redAccent,
+        Colors.orangeAccent,
+        Colors.yellowAccent,
+        Colors.cyanAccent,
+      ],
+      transform: GradientRotation(animationValue * 2 * pi),
+    );
 
-      // Bán kính hiện tại của hạt (Biến thiên quanh baseRadius)
-      final r = baseRadius + (moveFactor * 15); // Dao động biên độ 15px
+    final Paint paint = Paint()
+      ..shader = gradient.createShader(Rect.fromCircle(center: center, radius: radius + 50))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round;
 
-      // Tọa độ x, y
-      final x = center.dx + r * cos(p.angle);
-      final y = center.dy + r * sin(p.angle);
+    final Paint glowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = Colors.cyanAccent.withOpacity(0.5)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
 
-      // Vẽ hạt
-      final paint = Paint()
-        ..color = p.color
-        ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius, glowPaint);
 
-      canvas.drawCircle(Offset(x, y), p.size, paint);
+    for (int i = 0; i < barCount; i++) {
+      double angle = i * angleStep;
 
-      // Vẽ thêm vệt mờ (Glow effect) cho đẹp
-      canvas.drawCircle(
-          Offset(x, y),
-          p.size * 2,
-          Paint()..color = p.color.withOpacity(0.2)
+      // Fake FFT: Nếu animationValue không đổi (nhạc tắt) -> t không đổi -> sóng đứng yên
+      double t = animationValue * 8 * pi;
+
+      double wave1 = sin(angle * 10 + t);
+      double wave2 = cos(angle * 25 - t * 2);
+      double wave3 = sin(angle * 5 + t * 0.5);
+
+      double magnitude = (wave1 + wave2 + wave3).abs() / 3;
+      double barHeight = 10 + (magnitude * 40);
+
+      double pulse = 1.0 + (sin(t) * 0.05);
+
+      double startRadius = radius * pulse;
+      double endRadius = (radius + barHeight) * pulse;
+
+      Offset p1 = Offset(
+        center.dx + startRadius * cos(angle),
+        center.dy + startRadius * sin(angle),
       );
+
+      Offset p2 = Offset(
+        center.dx + endRadius * cos(angle),
+        center.dy + endRadius * sin(angle),
+      );
+
+      canvas.drawLine(p1, p2, paint);
     }
   }
 
